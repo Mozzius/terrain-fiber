@@ -1,6 +1,9 @@
-import React, { useMemo } from 'react';
-import { useUpdate } from 'react-three-fiber';
+import React, { useMemo, useRef } from 'react';
+import { useUpdate, extend } from 'react-three-fiber';
 import SimplexNoise from 'simplex-noise';
+import { VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper';
+
+extend({ VertexNormalsHelper });
 
 const generateTerrain = (simplex, size, height, levels, scale, offset) => {
   const noise = (level, x, z) =>
@@ -29,6 +32,8 @@ const Terrain = ({
   scale = 1,
   offset = { x: 0, z: 0 },
 }) => {
+  const meshRef = useRef();
+
   const simplex = useMemo(() => new SimplexNoise(seed), [seed]);
 
   const geometryRef = useUpdate(
@@ -42,19 +47,23 @@ const Terrain = ({
         offset
       );
       geometry.elementsNeedUpdate = true;
+      geometry.calculateVertexNormals();
     },
     [size, height, levels, scale, offset, seed]
   );
 
   return (
-    <mesh>
-      <planeGeometry
-        attach="geometry"
-        args={[undefined, undefined, size - 1, size - 1]}
-        ref={geometryRef}
-      />
-      <meshBasicMaterial attach="material" color="black" wireframe />
-    </mesh>
+    <group>
+      <mesh ref={meshRef}>
+        <planeGeometry
+          attach="geometry"
+          args={[undefined, undefined, size - 1, size - 1]}
+          ref={geometryRef}
+        />
+        <meshBasicMaterial attach="material" color="black" wireframe />
+      </mesh>
+      <vertexNormalsHelper args={meshRef} />
+    </group>
   );
 };
 
